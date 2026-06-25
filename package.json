@@ -9,9 +9,10 @@
     "server": "hexo server"
   },
   "hexo": {
-    "version": "8.1.2"
+    "version": "7.3.0"
   },
   "dependencies": {
+    "bluebird": "^3.7.2",
     "hexo": "^7.0.0",
     "hexo-deployer-git": "^4.0.0",
     "hexo-generator-archive": "^2.0.0",
