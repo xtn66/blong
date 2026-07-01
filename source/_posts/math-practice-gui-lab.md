@@ -83,7 +83,7 @@ categories:
 
 ### （四）结果图
 
-![小学生算术练习程序运行效果](https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Java%20Swing%20GUI%20application%20screenshot%20showing%20a%20mathematics%20practice%20program%20for%20elementary%20school%20students%2C%20with%20difficulty%20selection%20dropdown%2C%20arithmetic%20question%20display%2C%20answer%20input%20field%2C%20submit%20button%2C%20next%20question%20button%2C%20and%20score%20display%2C%20clean%20white%20interface%20with%20blue%20accents%2C%20Windows%20desktop%20background&image_size=landscape_16_9)
+![小学生算术练习程序运行效果](/images/math-practice-gui.png)
 
 ### （五）实验操作步骤
 
