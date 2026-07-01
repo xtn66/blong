@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Java 文件复制详解——字符缓冲流与字节缓冲流 | Hexo</title>
+  
+  <!-- SEO -->
+  <meta name="description" content="">
+  <meta name="keywords" content="Java,文件复制,字符流,字节流,IO流">
+  
+  <!-- Google Fonts - 字體 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- LXGW WenKai TC (霞鶩文楷) - 優雅手寫風格中文字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=LXGW+WenKai+TC:wght@300;400;700&display=swap" rel="stylesheet">
+  <!-- Inter - 英文字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- JetBrains Mono - 程式碼字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Orbitron - 賽博龐克風格字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <!-- Audiowide - Cyberpunk 風格字體 -->
+  <link href="https://fonts.googleapis.com/css2?family=Audiowide&display=swap" rel="stylesheet">
+  <!-- Teko - 斜體科幻風格 -->
+  <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Russo One - 粗體科幻風格 -->
+  <link href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap" rel="stylesheet">
+  
+  <!-- Critical CSS 內聯 -->
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'LXGW WenKai TC','Inter',-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.8;color:#1e293b;background:#f8fafc}
+    .container{max-width:900px;margin:0 auto;padding:20px}
+    a{color:#6366f1;text-decoration:none}
+  </style>
+  
+  <!-- Prism.js 程式碼高亮 - Tomorrow Night 主題 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  
+  <!-- 完整樣式表 -->
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/gsap-styles.css">
+  <link rel="stylesheet" href="/css/embeds.css">
+  <link rel="stylesheet" href="/css/cyberpunk.css">
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body class="post-page">
+  <header class="site-header cyber-header">
+  <div class="container">
+    <div class="header-content">
+      <a href="/" class="site-logo">
+        <span class="logo-bracket">[</span>
+        <span class="logo-text">Hexo</span>
+        <span class="logo-bracket">]</span>
+      </a>
+      <nav class="site-nav">
+        
+          <a href="/" class="nav-link">
+            <span class="nav-text">首頁</span>
+            <span class="nav-line"></span>
+          </a>
+        
+          <a href="/archives" class="nav-link">
+            <span class="nav-text">文章總覽</span>
+            <span class="nav-line"></span>
+          </a>
+        
+          <a href="/about" class="nav-link">
+            <span class="nav-text">關於</span>
+            <span class="nav-line"></span>
+          </a>
+        
+      </nav>
+    </div>
+  </div>
+  <div class="header-line"></div>
+</header>
+
+  
+  <main class="site-main">
+    <div class="container">
+      <article class="post hover-lift">
+  <header class="post-header">
+    <h2 class="post-title">
+      
+        <a href="/2026/06/25/file-copy/">Java 文件复制详解——字符缓冲流与字节缓冲流</a>
+      
+    </h2>
+    <div class="post-meta">
+      <time datetime="2026-06-24T16:00:00.000Z">
+        2026-06-25
+      </time>
+      
+        <span class="separator">•</span>
+        
+          <a href="/categories/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">学习笔记</a>
+        
+      
+    </div>
+  </header>
+  
+  <div class="post-content">
+    
+      <h2 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h2><p>文件复制是编程中常见的操作，Java 提供了多种方式实现文件复制。根据文件类型的不同，可以分为两大类：</p>
+<table>
+<thead>
+<tr>
+<th>文件类型</th>
+<th>适用场景</th>
+<th>推荐流</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>文本文件</td>
+<td>.txt, .java, .xml 等纯文本</td>
+<td><strong>字符缓冲流</strong></td>
+</tr>
+<tr>
+<td>二进制文件</td>
+<td>.jpg, .mp4, .zip, .exe 等</td>
+<td><strong>字节缓冲流</strong></td>
+</tr>
+</tbody></table>
+<p><strong>核心区别</strong>：</p>
+<ul>
+<li><strong>字符流</strong>：按字符读取，适合文本文件，会进行编码转换</li>
+<li><strong>字节流</strong>：按字节读取，适合任意文件，不进行编码转换</li>
+</ul>
+<h2 id="二、文本文件复制——字符缓冲流"><a href="#二、文本文件复制——字符缓冲流" class="headerlink" title="二、文本文件复制——字符缓冲流"></a>二、文本文件复制——字符缓冲流</h2><h3 id="2-1-使用-BufferedReader-和-BufferedWriter"><a href="#2-1-使用-BufferedReader-和-BufferedWriter" class="headerlink" title="2.1 使用 BufferedReader 和 BufferedWriter"></a>2.1 使用 BufferedReader 和 BufferedWriter</h3><p>字符缓冲流是处理文本文件最常用的方式，效率高且代码简洁。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TextFileCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">sourcePath</span> <span class="operator">=</span> <span class="string">&quot;source.txt&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">targetPath</span> <span class="operator">=</span> <span class="string">&quot;target.txt&quot;</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 方式1：使用 try-catch-finally（传统方式）</span></span><br><span class="line">        copyTextFileTraditional(sourcePath, targetPath);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 方式2：使用 try-with-resources（推荐）</span></span><br><span class="line">        copyTextFileModern(sourcePath, targetPath);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 传统方式：try-catch-finally</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyTextFileTraditional</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            reader = <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">FileReader</span>(source));</span><br><span class="line">            writer = <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">FileWriter</span>(target));</span><br><span class="line">            </span><br><span class="line">            String line;</span><br><span class="line">            <span class="keyword">while</span> ((line = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">                writer.write(line);</span><br><span class="line">                writer.newLine();  <span class="comment">// 写入换行符</span></span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;文本文件复制成功！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                <span class="keyword">if</span> (writer != <span class="literal">null</span>) writer.close();</span><br><span class="line">                <span class="keyword">if</span> (reader != <span class="literal">null</span>) reader.close();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 现代方式：try-with-resources（Java 7+）</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyTextFileModern</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">FileReader</span>(source));</span><br><span class="line">             <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">FileWriter</span>(target))) &#123;</span><br><span class="line">            </span><br><span class="line">            String line;</span><br><span class="line">            <span class="keyword">while</span> ((line = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">                writer.write(line);</span><br><span class="line">                writer.newLine();</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;文本文件复制成功！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-2-带缓冲区大小的复制"><a href="#2-2-带缓冲区大小的复制" class="headerlink" title="2.2 带缓冲区大小的复制"></a>2.2 带缓冲区大小的复制</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TextFileCopyWithBuffer</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copy</span><span class="params">(String source, String target, <span class="type">int</span> bufferSize)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">FileReader</span>(source), bufferSize);</span><br><span class="line">             <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">FileWriter</span>(target), bufferSize)) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">char</span>[] buffer = <span class="keyword">new</span> <span class="title class_">char</span>[bufferSize];</span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            <span class="keyword">while</span> ((len = reader.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                writer.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="2-3-处理不同编码格式"><a href="#2-3-处理不同编码格式" class="headerlink" title="2.3 处理不同编码格式"></a>2.3 处理不同编码格式</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">TextFileCopyWithEncoding</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyWithEncoding</span><span class="params">(String source, String target, String encoding)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">InputStreamReader</span>(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source), encoding));</span><br><span class="line">             <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">OutputStreamWriter</span>(</span><br><span class="line">                <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target), encoding))) &#123;</span><br><span class="line">            </span><br><span class="line">            String line;</span><br><span class="line">            <span class="keyword">while</span> ((line = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">                writer.write(line);</span><br><span class="line">                writer.newLine();</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="三、任意文件复制——字节缓冲流"><a href="#三、任意文件复制——字节缓冲流" class="headerlink" title="三、任意文件复制——字节缓冲流"></a>三、任意文件复制——字节缓冲流</h2><h3 id="3-1-使用-BufferedInputStream-和-BufferedOutputStream"><a href="#3-1-使用-BufferedInputStream-和-BufferedOutputStream" class="headerlink" title="3.1 使用 BufferedInputStream 和 BufferedOutputStream"></a>3.1 使用 BufferedInputStream 和 BufferedOutputStream</h3><p>字节缓冲流可以复制任意类型的文件，是”万能复制”方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">BinaryFileCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">sourcePath</span> <span class="operator">=</span> <span class="string">&quot;source.jpg&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">targetPath</span> <span class="operator">=</span> <span class="string">&quot;target.jpg&quot;</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 方式1：使用 try-with-resources</span></span><br><span class="line">        copyFileModern(sourcePath, targetPath);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 方式2：自定义缓冲区大小</span></span><br><span class="line">        copyFileWithBuffer(sourcePath, targetPath, <span class="number">8192</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 方式3：单字节复制（不推荐，效率低）</span></span><br><span class="line">        copyFileSingleByte(sourcePath, targetPath);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 推荐方式：使用 BufferedInputStream 和 BufferedOutputStream</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFileModern</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedInputStream</span> <span class="variable">bis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source));</span><br><span class="line">             <span class="type">BufferedOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedOutputStream</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target))) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">8192</span>];  <span class="comment">// 8KB 缓冲区</span></span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            <span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;文件复制成功！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 自定义缓冲区大小</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFileWithBuffer</span><span class="params">(String source, String target, <span class="type">int</span> bufferSize)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedInputStream</span> <span class="variable">bis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source), bufferSize);</span><br><span class="line">             <span class="type">BufferedOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedOutputStream</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target), bufferSize)) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[bufferSize];</span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            <span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;文件复制成功！缓冲区大小: &quot;</span> + bufferSize + <span class="string">&quot; bytes&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 单字节复制（效率极低，不推荐）</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFileSingleByte</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">InputStream</span> <span class="variable">is</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source);</span><br><span class="line">             <span class="type">OutputStream</span> <span class="variable">os</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target)) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">int</span> byteRead;</span><br><span class="line">            <span class="keyword">while</span> ((byteRead = is.read()) != -<span class="number">1</span>) &#123;</span><br><span class="line">                os.write(byteRead);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-2-复制大文件（带进度显示）"><a href="#3-2-复制大文件（带进度显示）" class="headerlink" title="3.2 复制大文件（带进度显示）"></a>3.2 复制大文件（带进度显示）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LargeFileCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyWithProgress</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="type">File</span> <span class="variable">sourceFile</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(source);</span><br><span class="line">        <span class="type">long</span> <span class="variable">totalSize</span> <span class="operator">=</span> sourceFile.length();</span><br><span class="line">        <span class="type">long</span> <span class="variable">copiedSize</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedInputStream</span> <span class="variable">bis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source));</span><br><span class="line">             <span class="type">BufferedOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedOutputStream</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target))) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">65536</span>];  <span class="comment">// 64KB 缓冲区</span></span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            </span><br><span class="line">            <span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">                copiedSize += len;</span><br><span class="line">                </span><br><span class="line">                <span class="comment">// 显示进度</span></span><br><span class="line">                <span class="type">int</span> <span class="variable">progress</span> <span class="operator">=</span> (<span class="type">int</span>) ((copiedSize * <span class="number">100</span>) / totalSize);</span><br><span class="line">                System.out.print(<span class="string">&quot;\r复制进度: &quot;</span> + progress + <span class="string">&quot;%&quot;</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;\n文件复制完成！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="3-3-复制整个目录"><a href="#3-3-复制整个目录" class="headerlink" title="3.3 复制整个目录"></a>3.3 复制整个目录</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DirectoryCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyDirectory</span><span class="params">(String sourceDir, String targetDir)</span> &#123;</span><br><span class="line">        <span class="type">File</span> <span class="variable">source</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(sourceDir);</span><br><span class="line">        <span class="type">File</span> <span class="variable">target</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(targetDir);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 创建目标目录</span></span><br><span class="line">        <span class="keyword">if</span> (!target.exists()) &#123;</span><br><span class="line">            target.mkdirs();</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        File[] files = source.listFiles();</span><br><span class="line">        <span class="keyword">if</span> (files != <span class="literal">null</span>) &#123;</span><br><span class="line">            <span class="keyword">for</span> (File file : files) &#123;</span><br><span class="line">                <span class="keyword">if</span> (file.isDirectory()) &#123;</span><br><span class="line">                    <span class="comment">// 递归复制子目录</span></span><br><span class="line">                    copyDirectory(file.getAbsolutePath(), </span><br><span class="line">                        target.getAbsolutePath() + File.separator + file.getName());</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    <span class="comment">// 复制文件</span></span><br><span class="line">                    copyFile(file.getAbsolutePath(), </span><br><span class="line">                        target.getAbsolutePath() + File.separator + file.getName());</span><br><span class="line">                    System.out.println(<span class="string">&quot;已复制: &quot;</span> + file.getName());</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFile</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">BufferedInputStream</span> <span class="variable">bis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source));</span><br><span class="line">             <span class="type">BufferedOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedOutputStream</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target))) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">8192</span>];</span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            <span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="四、Java-NIO-文件复制（高效）"><a href="#四、Java-NIO-文件复制（高效）" class="headerlink" title="四、Java NIO 文件复制（高效）"></a>四、Java NIO 文件复制（高效）</h2><p>Java NIO 提供了更高效的文件复制方式。</p>
+<h3 id="4-1-使用-Files-copy"><a href="#4-1-使用-Files-copy" class="headerlink" title="4.1 使用 Files.copy()"></a>4.1 使用 Files.copy()</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.nio.file.Files;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.Path;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.Paths;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.StandardCopyOption;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">NioFileCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">source</span> <span class="operator">=</span> <span class="string">&quot;source.txt&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">target</span> <span class="operator">=</span> <span class="string">&quot;target.txt&quot;</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="comment">// 方式1：基本复制</span></span><br><span class="line">            Files.copy(Paths.get(source), Paths.get(target));</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 方式2：覆盖已存在的文件</span></span><br><span class="line">            Files.copy(Paths.get(source), Paths.get(target), </span><br><span class="line">                StandardCopyOption.REPLACE_EXISTING);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 方式3：复制目录</span></span><br><span class="line">            Files.copy(Paths.get(source), Paths.get(target),</span><br><span class="line">                StandardCopyOption.REPLACE_EXISTING,</span><br><span class="line">                StandardCopyOption.COPY_ATTRIBUTES);</span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;NIO 文件复制成功！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="4-2-使用-Channel-复制"><a href="#4-2-使用-Channel-复制" class="headerlink" title="4.2 使用 Channel 复制"></a>4.2 使用 Channel 复制</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.io.*;</span><br><span class="line"><span class="keyword">import</span> java.nio.channels.FileChannel;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">ChannelFileCopy</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copy</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">FileChannel</span> <span class="variable">sourceChannel</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source).getChannel();</span><br><span class="line">             <span class="type">FileChannel</span> <span class="variable">targetChannel</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target).getChannel()) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 方式1：直接传输</span></span><br><span class="line">            sourceChannel.transferTo(<span class="number">0</span>, sourceChannel.size(), targetChannel);</span><br><span class="line">            </span><br><span class="line">            <span class="comment">// 方式2：使用 ByteBuffer</span></span><br><span class="line">            <span class="comment">// ByteBuffer buffer = ByteBuffer.allocate(8192);</span></span><br><span class="line">            <span class="comment">// while (sourceChannel.read(buffer) != -1) &#123;</span></span><br><span class="line">            <span class="comment">//     buffer.flip();</span></span><br><span class="line">            <span class="comment">//     targetChannel.write(buffer);</span></span><br><span class="line">            <span class="comment">//     buffer.clear();</span></span><br><span class="line">            <span class="comment">// &#125;</span></span><br><span class="line">            </span><br><span class="line">            System.out.println(<span class="string">&quot;Channel 文件复制成功！&quot;</span>);</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="五、各种复制方式对比"><a href="#五、各种复制方式对比" class="headerlink" title="五、各种复制方式对比"></a>五、各种复制方式对比</h2><h3 id="5-1-性能对比"><a href="#5-1-性能对比" class="headerlink" title="5.1 性能对比"></a>5.1 性能对比</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CopyPerformanceTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">String</span> <span class="variable">source</span> <span class="operator">=</span> <span class="string">&quot;large_file.zip&quot;</span>;</span><br><span class="line">        <span class="type">String</span> <span class="variable">target</span> <span class="operator">=</span> <span class="string">&quot;large_file_copy.zip&quot;</span>;</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 测试单字节复制</span></span><br><span class="line">        <span class="type">long</span> <span class="variable">start</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        BinaryFileCopy.copyFileSingleByte(source, target);</span><br><span class="line">        <span class="type">long</span> <span class="variable">end</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;单字节复制耗时: &quot;</span> + (end - start) + <span class="string">&quot; ms&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 测试字节流复制（无缓冲）</span></span><br><span class="line">        start = System.currentTimeMillis();</span><br><span class="line">        copyWithStream(source, target);</span><br><span class="line">        end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;字节流复制耗时: &quot;</span> + (end - start) + <span class="string">&quot; ms&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 测试字节缓冲流复制</span></span><br><span class="line">        start = System.currentTimeMillis();</span><br><span class="line">        BinaryFileCopy.copyFileModern(source, target);</span><br><span class="line">        end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;字节缓冲流复制耗时: &quot;</span> + (end - start) + <span class="string">&quot; ms&quot;</span>);</span><br><span class="line">        </span><br><span class="line">        <span class="comment">// 测试 NIO Channel 复制</span></span><br><span class="line">        start = System.currentTimeMillis();</span><br><span class="line">        ChannelFileCopy.copy(source, target);</span><br><span class="line">        end = System.currentTimeMillis();</span><br><span class="line">        System.out.println(<span class="string">&quot;NIO Channel 复制耗时: &quot;</span> + (end - start) + <span class="string">&quot; ms&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyWithStream</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> (<span class="type">InputStream</span> <span class="variable">is</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source);</span><br><span class="line">             <span class="type">OutputStream</span> <span class="variable">os</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target)) &#123;</span><br><span class="line">            </span><br><span class="line">            <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">8192</span>];</span><br><span class="line">            <span class="type">int</span> len;</span><br><span class="line">            <span class="keyword">while</span> ((len = is.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">                os.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">            &#125;</span><br><span class="line">            </span><br><span class="line">        &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="5-2-方式对比表"><a href="#5-2-方式对比表" class="headerlink" title="5.2 方式对比表"></a>5.2 方式对比表</h3><table>
+<thead>
+<tr>
+<th>方式</th>
+<th>适用场景</th>
+<th>效率</th>
+<th>代码复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单字节复制</td>
+<td>小文件</td>
+<td>❌ 最低</td>
+<td>✅ 简单</td>
+</tr>
+<tr>
+<td>字节流复制（无缓冲）</td>
+<td>小文件</td>
+<td>⚠️ 较低</td>
+<td>✅ 简单</td>
+</tr>
+<tr>
+<td><strong>字节缓冲流</strong></td>
+<td><strong>任意文件</strong></td>
+<td><strong>✅ 较高</strong></td>
+<td><strong>✅ 简单</strong></td>
+</tr>
+<tr>
+<td><strong>字符缓冲流</strong></td>
+<td><strong>文本文件</strong></td>
+<td><strong>✅ 较高</strong></td>
+<td><strong>✅ 简单</strong></td>
+</tr>
+<tr>
+<td>NIO Files.copy()</td>
+<td>任意文件</td>
+<td>✅ 最高</td>
+<td>✅ 最简单</td>
+</tr>
+<tr>
+<td>NIO Channel</td>
+<td>大文件</td>
+<td>✅ 最高</td>
+<td>⚠️ 中等</td>
+</tr>
+</tbody></table>
+<h2 id="六、常见问题与解决方案"><a href="#六、常见问题与解决方案" class="headerlink" title="六、常见问题与解决方案"></a>六、常见问题与解决方案</h2><h3 id="6-1-文件编码问题"><a href="#6-1-文件编码问题" class="headerlink" title="6.1 文件编码问题"></a>6.1 文件编码问题</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 问题：复制中文文件出现乱码</span></span><br><span class="line"><span class="comment">// 解决方案：指定编码格式</span></span><br><span class="line"><span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">InputStreamReader</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source), <span class="string">&quot;UTF-8&quot;</span>));</span><br><span class="line"><span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(</span><br><span class="line">    <span class="keyword">new</span> <span class="title class_">OutputStreamWriter</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target), <span class="string">&quot;UTF-8&quot;</span>));</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-2-文件过大问题"><a href="#6-2-文件过大问题" class="headerlink" title="6.2 文件过大问题"></a>6.2 文件过大问题</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 问题：大文件复制内存溢出</span></span><br><span class="line"><span class="comment">// 解决方案：使用缓冲流，分块读取</span></span><br><span class="line"><span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">8192</span>];  <span class="comment">// 8KB 缓冲区</span></span><br><span class="line"><span class="type">int</span> len;</span><br><span class="line"><span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">    bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-3-文件权限问题"><a href="#6-3-文件权限问题" class="headerlink" title="6.3 文件权限问题"></a>6.3 文件权限问题</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 问题：复制文件时权限不足</span></span><br><span class="line"><span class="comment">// 解决方案：检查文件权限</span></span><br><span class="line"><span class="type">File</span> <span class="variable">file</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(source);</span><br><span class="line"><span class="keyword">if</span> (!file.canRead()) &#123;</span><br><span class="line">    System.err.println(<span class="string">&quot;无法读取源文件&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="6-4-文件不存在问题"><a href="#6-4-文件不存在问题" class="headerlink" title="6.4 文件不存在问题"></a>6.4 文件不存在问题</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 问题：源文件不存在</span></span><br><span class="line"><span class="comment">// 解决方案：检查文件是否存在</span></span><br><span class="line"><span class="type">File</span> <span class="variable">sourceFile</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">File</span>(source);</span><br><span class="line"><span class="keyword">if</span> (!sourceFile.exists()) &#123;</span><br><span class="line">    System.err.println(<span class="string">&quot;源文件不存在&quot;</span>);</span><br><span class="line">    <span class="keyword">return</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="七、最佳实践"><a href="#七、最佳实践" class="headerlink" title="七、最佳实践"></a>七、最佳实践</h2><h3 id="7-1-文本文件复制"><a href="#7-1-文本文件复制" class="headerlink" title="7.1 文本文件复制"></a>7.1 文本文件复制</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyTextFile</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> (<span class="type">BufferedReader</span> <span class="variable">reader</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedReader</span>(<span class="keyword">new</span> <span class="title class_">FileReader</span>(source));</span><br><span class="line">         <span class="type">BufferedWriter</span> <span class="variable">writer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedWriter</span>(<span class="keyword">new</span> <span class="title class_">FileWriter</span>(target))) &#123;</span><br><span class="line">        </span><br><span class="line">        String line;</span><br><span class="line">        <span class="keyword">while</span> ((line = reader.readLine()) != <span class="literal">null</span>) &#123;</span><br><span class="line">            writer.write(line);</span><br><span class="line">            writer.newLine();</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        <span class="comment">// 处理异常</span></span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-2-任意文件复制"><a href="#7-2-任意文件复制" class="headerlink" title="7.2 任意文件复制"></a>7.2 任意文件复制</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFile</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> (<span class="type">BufferedInputStream</span> <span class="variable">bis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedInputStream</span>(<span class="keyword">new</span> <span class="title class_">FileInputStream</span>(source));</span><br><span class="line">         <span class="type">BufferedOutputStream</span> <span class="variable">bos</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">BufferedOutputStream</span>(<span class="keyword">new</span> <span class="title class_">FileOutputStream</span>(target))) &#123;</span><br><span class="line">        </span><br><span class="line">        <span class="type">byte</span>[] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="number">8192</span>];</span><br><span class="line">        <span class="type">int</span> len;</span><br><span class="line">        <span class="keyword">while</span> ((len = bis.read(buffer)) != -<span class="number">1</span>) &#123;</span><br><span class="line">            bos.write(buffer, <span class="number">0</span>, len);</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        <span class="comment">// 处理异常</span></span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="7-3-使用-NIO（推荐）"><a href="#7-3-使用-NIO（推荐）" class="headerlink" title="7.3 使用 NIO（推荐）"></a>7.3 使用 NIO（推荐）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> java.nio.file.Files;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.Paths;</span><br><span class="line"><span class="keyword">import</span> java.nio.file.StandardCopyOption;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">copyFileNio</span><span class="params">(String source, String target)</span> &#123;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        Files.copy(Paths.get(source), Paths.get(target), </span><br><span class="line">            StandardCopyOption.REPLACE_EXISTING);</span><br><span class="line">    &#125; <span class="keyword">catch</span> (IOException e) &#123;</span><br><span class="line">        e.printStackTrace();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="八、总结"><a href="#八、总结" class="headerlink" title="八、总结"></a>八、总结</h2><p>文件复制是 Java IO 操作的基础，选择合适的复制方式至关重要：</p>
+<ol>
+<li><strong>文本文件复制</strong>：使用 <strong>字符缓冲流</strong>（BufferedReader&#x2F;BufferedWriter），会进行编码转换</li>
+<li><strong>任意文件复制</strong>：使用 <strong>字节缓冲流</strong>（BufferedInputStream&#x2F;BufferedOutputStream），不进行编码转换</li>
+<li><strong>大文件复制</strong>：使用 <strong>NIO Channel</strong> 或 <strong>Files.copy()</strong>，效率更高</li>
+<li><strong>推荐做法</strong>：使用 <strong>try-with-resources</strong> 自动关闭资源</li>
+</ol>
+<p><strong>核心要点</strong>：</p>
+<ul>
+<li>不要使用单字节复制，效率极低</li>
+<li>始终使用缓冲流，减少 IO 次数</li>
+<li>处理文本文件时注意编码格式</li>
+<li>使用 try-with-resources 确保资源正确关闭</li>
+</ul>
+<p>掌握文件复制的各种方式，你将能够处理各种文件操作场景！</p>
+<p><strong>推荐阅读</strong>：</p>
+<ul>
+<li>《Java 编程思想》IO 流章节</li>
+<li>《Effective Java》资源管理章节</li>
+<li>《深入理解 Java IO 与 NIO》</li>
+</ul>
+<p><strong>相关标签</strong>：Java、文件复制、字符流、字节流、IO流、NIO</p>
+
+    
+  </div>
+  
+  
+  <footer class="post-footer">
+    <div class="post-tags">
+      
+        <a href="/tags/Java/">#Java</a>
+      
+        <a href="/tags/%E6%96%87%E4%BB%B6%E5%A4%8D%E5%88%B6/">#文件复制</a>
+      
+        <a href="/tags/%E5%AD%97%E7%AC%A6%E6%B5%81/">#字符流</a>
+      
+        <a href="/tags/%E5%AD%97%E8%8A%82%E6%B5%81/">#字节流</a>
+      
+        <a href="/tags/IO%E6%B5%81/">#IO流</a>
+      
+    </div>
+  </footer>
+  
+</article>
+
+      
+      <!-- 上一篇/下一篇導航 -->
+      <nav class="post-nav">
+        
+          <a href="/2026/06/25/enum-application-scenarios/" class="prev">
+            ← 枚举类型的三种核心应用场景
+          </a>
+        
+        
+          <a href="/2026/06/25/formal-methods-and-uml/" class="next">
+            形式化方法入门与《大象——Thinking in UML》读书推荐 →
+          </a>
+        
+      </nav>
+    </div>
+  </main>
+  
+  <footer class="site-footer">
+  <div class="container">
+    <p>&copy; 2026 John Doe</p>
+    <p>
+      Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> 
+      | Theme: Fast Theme
+    </p>
+    
+    <div class="social-links">
+      
+        <a href="https://github.com/ceeyu" target="_blank" rel="noopener">GitHub</a>
+      
+        <a href="https://ithelp.ithome.com.tw/users/20151593" target="_blank" rel="noopener">iThome</a>
+      
+    </div>
+    
+  </div>
+</footer>
+
+<!-- Prism.js 程式碼高亮 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<!-- 預載入常用語言 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markup.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-dart.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+
+<!-- GSAP 動畫庫 -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+
+<!-- 自定義腳本 -->
+<script defer src="/js/main.js"></script>
+<script defer src="/js/gsap-animations.js"></script>
+<script defer src="/js/cyberpunk.js"></script>
+
+<!-- 初始化程式碼高亮 -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Hexo 使用 figure.highlight 結構，需要轉換為 Prism 可識別的格式
+    document.querySelectorAll('figure.highlight').forEach(function(figure) {
+      const codeTable = figure.querySelector('table');
+      if (!codeTable) return;
+      
+      const codeCell = codeTable.querySelector('td.code pre');
+      if (!codeCell) return;
+      
+      // 獲取程式碼內容
+      const lines = codeCell.querySelectorAll('.line');
+      let codeContent = '';
+      lines.forEach(function(line) {
+        codeContent += line.textContent + '\n';
+      });
+      
+      // 檢測語言
+      let lang = 'plaintext';
+      const figureClass = figure.className;
+      
+      // 從 figure class 獲取語言
+      const langMatch = figureClass.match(/highlight\s+(\w+)/);
+      if (langMatch && langMatch[1] !== 'plaintext') {
+        lang = langMatch[1];
+      }
+      
+      // 如果是 plaintext，嘗試自動檢測
+      if (lang === 'plaintext') {
+        if (codeContent.includes('#include') || codeContent.includes('int main') || 
+            codeContent.includes('cout') || codeContent.includes('cin') ||
+            codeContent.includes('iostream') || codeContent.includes('using namespace')) {
+          lang = 'cpp';
+        } else if (codeContent.includes('def ') || codeContent.includes('import ') || codeContent.includes('print(')) {
+          lang = 'python';
+        } else if (codeContent.includes('function') || codeContent.includes('const ') || 
+                   codeContent.includes('let ') || codeContent.includes('=>')) {
+          lang = 'javascript';
+        } else if (codeContent.includes('public class') || codeContent.includes('public static void')) {
+          lang = 'java';
+        } else if (codeContent.includes('Widget') || codeContent.includes('Flutter') || codeContent.includes('@override')) {
+          lang = 'dart';
+        }
+      }
+      
+      // 創建新的 pre > code 結構
+      const pre = document.createElement('pre');
+      pre.className = 'line-numbers language-' + lang;
+      
+      const code = document.createElement('code');
+      code.className = 'language-' + lang;
+      code.textContent = codeContent.trim();
+      
+      pre.appendChild(code);
+      
+      // 替換原本的 figure
+      figure.parentNode.replaceChild(pre, figure);
+    });
+    
+    // 也處理標準的 pre > code
+    document.querySelectorAll('pre code:not([class*="language-"])').forEach(function(block) {
+      const content = block.textContent;
+      let lang = 'plaintext';
+      
+      if (content.includes('#include') || content.includes('int main')) {
+        lang = 'cpp';
+      } else if (content.includes('def ') || content.includes('import ')) {
+        lang = 'python';
+      } else if (content.includes('function') || content.includes('const ')) {
+        lang = 'javascript';
+      }
+      
+      block.classList.add('language-' + lang);
+      block.parentElement.classList.add('language-' + lang, 'line-numbers');
+    });
+    
+    // 執行 Prism 高亮
+    if (typeof Prism !== 'undefined') {
+      Prism.highlightAll();
+    }
+  });
+</script>
+
+</body>
+</html>
